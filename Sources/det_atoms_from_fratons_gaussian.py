@@ -47,6 +47,8 @@ size_window=2
 
 #skewnes of the filter ... typical values 1, 2, 3 ... now 2.
 mult=2.0
+# the size of grid around central fraton to smooth: 2 is nice: 0 - no filter, 1 - why not ; 2 or 3 nice choices. 
+m_grid_size = 2
 
 
 in_dir='MD_01/'
@@ -119,7 +121,7 @@ for i in range(int(len(files2read))):
 
     #third ... filter: define m
     coords_weighted = np.array(coords, dtype=float)
-    m = 2
+    m = m_grid_size
     for ic in range(len(coords)):
         val = coords[ic]
         #print(val, np_dset[val[0], val[1], val[2]])
