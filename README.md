@@ -1,6 +1,6 @@
 # fratons2atoms
 
-Sources of the fratons2atoms package. 
+python package
 
 Purposes:
 -----------------
