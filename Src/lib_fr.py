@@ -63,7 +63,7 @@ def make_zeroes(number):
 
     n_digits=6   # total numnber of digits that should appear in the filename
     zeroes='0'*(n_digits-len(str(number)))
-    
+
     return zeroes
 
 
@@ -214,3 +214,36 @@ def entropy (density, temperature):
     entro_dens = density*np.log(density) + (1.0 - density)*np.log(1.0 - density)
 
     return factor*entro_dens;
+
+
+def periodize_configuration(configuration, r_cut, dimensions):
+    """applying PBC conditions on some rectangular box
+    Parameters
+        configuration: np.array of shape (n_atoms, 3), coordinates of the atoms to be periodized
+        r_cut: float, cutoff radius
+        dimensions: np.array of shape (3,) (or list length 3), dimensions of the periodic rectangle
+    Returns
+        periodized_configuration: np.array of shape (n_atoms_periodized, 3)
+        initial_atom_ids: np.array of shape (n_atoms_periodized, )
+            ids of the periodized atoms in the initial configuration
+    """
+    periodized_configuration = []
+    initial_atom_ids = []
+
+    x_translation = np.array([[dimensions[0], 0, 0]], dtype=configuration.dtype)
+    y_translation = np.array([[0, dimensions[1], 0]], dtype=configuration.dtype)
+    z_translation = np.array([[0, 0, dimensions[2]]], dtype=configuration.dtype)
+
+    mask_true = np.ones(configuration.shape[0], dtype=bool)
+
+    for i_x, mask_x in [(-1., configuration[:, 0] > (dimensions[0] - r_cut)), (0., mask_true), (1., configuration[:, 0] < r_cut)]:
+        for i_y, mask_y in [(-1., configuration[:, 1] > (dimensions[1] - r_cut)), (0., mask_true), (1., configuration[:, 1] < r_cut)]:
+            for i_z, mask_z in [(-1., configuration[:, 2] > (dimensions[2] - r_cut)), (0., mask_true), (1., configuration[:, 2] < r_cut)]:
+                mask = mask_x * mask_y * mask_z
+                initial_atom_ids.append(np.nonzero(mask)[0])
+                periodized_configuration.append(configuration[mask] + i_x*x_translation + i_y*y_translation + i_z*z_translation)
+
+    periodized_configuration = np.concatenate(periodized_configuration, axis=0)
+    initial_atom_ids = np.concatenate(initial_atom_ids, axis=0)
+
+    return periodized_configuration, initial_atom_ids
