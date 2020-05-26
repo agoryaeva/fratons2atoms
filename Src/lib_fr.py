@@ -17,7 +17,10 @@ from scipy.signal import argrelextrema
 
 
 
-def read_hdf5(file, h5_key, path=None):
+
+# - - - - - - - - - - - - - - - - - -
+
+def read_hdf5(file, path=None):
     if path == None:
         file_r = file
     else:
@@ -28,6 +31,7 @@ def read_hdf5(file, h5_key, path=None):
         exit(0)
     db = h5py.File(file_r, 'r')
     #print("The keys of the HDF5 file...............:", db.keys())
+    h5_key = list(db.keys())[0]
     dset = db[h5_key]
     np_dset = np.asarray(dset, dtype=float)
 
@@ -38,7 +42,14 @@ def read_hdf5(file, h5_key, path=None):
 # - - - - - - - - - - - - - - - - - -
 
 
-def select_type_files(path, ftype):
+def select_type_files(path, ftype, fkey):
+    """ Function to select files of sertain type with sertain name pattern
+        Example: to select the files with names drp__XXXXXXXXX.h5 in directory results/,
+                one should provide:
+                        path = 'results/'
+                        ftype = '.h5' 
+                        fkey = 'drp_'
+        The function will select all the files that begin with fkey and end with ftype in the indicated directory """
 
     if not os.path.exists(path):
         print("The directory %s  doesn t exists" % str(path))
@@ -46,25 +57,15 @@ def select_type_files(path, ftype):
 
     files = os.listdir(path)
     fsorted = natsort.natsorted(files)
-    number=len(ftype)
+    nlast=len(ftype)
+    nfirst=len(fkey)
     files_selected = []
     for fname in fsorted:
-        if fname[-number:] == ftype:
+        if (fname[-nlast:] == ftype) and (fkey in fname):
             files_selected.append(fname)
 
     return files_selected
 
-
-# - - - - - - - - - - - - - - - - - -
-
-
-def make_zeroes(number):
-  """ Function to create n zeroes before the file_id in the poscar filename"""
-
-    n_digits=6   # total numnber of digits that should appear in the filename
-    zeroes='0'*(n_digits-len(str(number)))
-
-    return zeroes
 
 
 # - - - - - - - - - - - - - - - - - -
@@ -216,8 +217,11 @@ def entropy (density, temperature):
     return factor*entro_dens;
 
 
+
+# - - - - - - - - - - - - - - - - - -
+
 def periodize_configuration(configuration, r_cut, dimensions):
-    """applying PBC conditions on some rectangular box
+    """applying PBC conditions on a rectangular box
     Parameters
         configuration: np.array of shape (n_atoms, 3), coordinates of the atoms to be periodized
         r_cut: float, cutoff radius

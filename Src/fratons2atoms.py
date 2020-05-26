@@ -62,14 +62,16 @@ m_grid_size = 2
 
 out_dir_at='%s/xyz_at/' %(in_dir)
 out_dir_at_smooth='%s/xyz_at_smooth/' %(in_dir)
-key = 'drp'
-ftype='.h5'
+ftype='.h5'    # type of files to read
+fkey='drp__'   # prefix of files to read
+
+
 os.system('rm -rf %s' % out_dir_at)
 os.system('rm -rf %s' % out_dir_at_smooth)
 os.system('mkdir -p %s' % out_dir_at)
 os.system('mkdir -p %s' % out_dir_at_smooth)
 
-files2read = select_type_files(in_dir, ftype)
+files2read = select_type_files(in_dir, ftype, fkey)
 print ('     ')
 print (' ----------------------- DIRECTORY: %s ------------------------' %in_dir)
 print ('  >>  Number of files to read: ............................... ', len(files2read))
@@ -103,7 +105,7 @@ for i in range(int(len(files2read))):
     f = files2read[i]
 
     file_h5 = in_dir + f
-    np_dset = read_hdf5(file_h5, key)
+    np_dset = read_hdf5(file_h5)
 
     # first filter ....: define sigma
     np_dset_gaussian = gaussian_filter(np_dset, sigma=sigma_gaussian, order=0, mode='wrap')
