@@ -15,6 +15,8 @@ from ase.io import read, iread, write
 from scipy import ndimage as ndi
 from scipy.signal import argrelextrema
 from sklearn.neighbors import KDTree
+from numba import jit
+
 
 def clean_coords (coords, coords_unperturbed, cell, r_cut, dist_to_remove):
 
@@ -58,12 +60,6 @@ def clean_coords (coords, coords_unperturbed, cell, r_cut, dist_to_remove):
     """
     return coords_clean,coords_unperturbed_clean ;
 
-
-
-
-
-
-
 # - - - - - - - - - - - - - - - - - -
 
 def read_hdf5(file, path=None):
@@ -86,6 +82,26 @@ def read_hdf5(file, path=None):
 
 
 # - - - - - - - - - - - - - - - - - -
+
+def read_hdf5_old(file, h5_key, path=None):
+    if path == None:
+        file_r = file
+    else:
+        file_r = path + file
+
+    if not os.path.exists(file_r):
+        print("The directory %s  doesn t exists" % str(file_r))
+        exit(0)
+    db = h5py.File(file_r, 'r')
+    #print("The keys of the HDF5 file...............:", db.keys())
+    dset = db[h5_key]
+    np_dset = np.asarray(dset, dtype=float)
+
+    return np_dset;
+
+
+
+
 
 
 def select_type_files(path, ftype, fkey):
@@ -328,3 +344,57 @@ def periodize_configuration(configuration, r_cut, cell):
     print(len(test), len(test2), len(test) + len(test2))
     """
     return periodized_configuration, initial_atom_ids, in_or_out
+
+
+@jit(nopython=True)
+def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size):
+    #coords_weighted = np.array(coords, dtype=float)
+
+    m = m_grid_size
+    for ic in range(len(coords)):
+        val = coords[ic]
+        #print(val, np_dset[val[0], val[1], val[2]])
+        factor = 0.0
+        tmp_i = 0.0
+        tmp_j = 0.0
+        tmp_k = 0.0
+        for m1 in range(-m,m+1):
+            for m2 in range(-m,m+1):
+                for m3 in range(-m,m+1):
+                    i1 = val[0] + m1
+                    i1uf = val[0] + m1
+                    if i1 >= np_dset.shape[0]:
+                        i1 = i1 - np_dset.shape[0]
+                    if  i1  < 0 :
+                        i1 = i1 + np_dset.shape[0]
+
+                    i2 = val[1] + m2
+                    i2uf = val[1] + m2
+                    if i2 >= np_dset.shape[1]:
+                        i2 = i2 - np_dset.shape[1]
+                    if  i2  < 0:
+                        i2 = i2 + np_dset.shape[1]
+
+                    i3 = val[2] + m3
+                    i3uf = val[2] + m3
+                    if i3 >= np_dset.shape[2]:
+                        i3 = i3 - np_dset.shape[2]
+                    if  i3 <  0:
+                        i3 = i3 + np_dset.shape[2]
+                    val_dens = np_dset_gaussian[i1, i2, i3]
+                    """
+                    sign_dens=np.sign(val_dens)
+                    abs_dens=abs(val_dens)
+                    factor = factor + sign_dens*abs_dens**mult
+                    dist = (float(i1uf)**2 + float(i2uf)**2 + float(i3uf)**2 )**nult
+                    tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)
+                    tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)
+                    tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)
+                    """
+                    factor = factor + val_dens**mult
+                    dist = (float(i1uf)**2 + float(i2uf)**2 + float(i3uf)**2 )**nult
+                    tmp_i = tmp_i   + val_dens**mult * float(i1uf)
+                    tmp_j = tmp_j   + val_dens**mult * float(i2uf)
+                    tmp_k = tmp_k   + val_dens**mult * float(i3uf)
+        coords_weighted[ic] = np.array([tmp_i, tmp_j, tmp_k])/factor
+    return coords_weighted;
