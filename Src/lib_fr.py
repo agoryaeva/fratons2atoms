@@ -47,7 +47,7 @@ def select_type_files(path, ftype, fkey):
         Example: to select the files with names drp__XXXXXXXXX.h5 in directory results/,
                 one should provide:
                         path = 'results/'
-                        ftype = '.h5' 
+                        ftype = '.h5'
                         fkey = 'drp_'
         The function will select all the files that begin with fkey and end with ftype in the indicated directory """
 
@@ -119,6 +119,15 @@ def write_atoms_xyz(np_dset, threshold, prefix_file, index_at, out_dir=None):
     f.close()
 
     return
+
+
+def set_pbc_cell(np_dset):
+
+    cell = np.zeros((3,3))
+    cell[0] = [np_dset.shape[0],          0        ,        0           ]
+    cell[1] = [     0            , np_dset.shape[1],        0           ]
+    cell[2] = [     0           ,           0        , np_dset.shape[2] ]
+    return cell
 
 
 # - - - - - - - - - - - - - - - - - -
@@ -220,12 +229,12 @@ def entropy (density, temperature):
 
 # - - - - - - - - - - - - - - - - - -
 
-def periodize_configuration(configuration, r_cut, dimensions):
+def periodize_configuration(configuration, r_cut, cell):
     """applying PBC conditions on a rectangular box
     Parameters
         configuration: np.array of shape (n_atoms, 3), coordinates of the atoms to be periodized
         r_cut: float, cutoff radius
-        dimensions: np.array of shape (3,) (or list length 3), dimensions of the periodic rectangle
+        cell: np.array of shape (3,3), dimensions of the periodic rectangle
     Returns
         periodized_configuration: np.array of shape (n_atoms_periodized, 3)
         initial_atom_ids: np.array of shape (n_atoms_periodized, )
@@ -233,21 +242,43 @@ def periodize_configuration(configuration, r_cut, dimensions):
     """
     periodized_configuration = []
     initial_atom_ids = []
-
+    dimensions=np.zeros((3))
+    for i in range(3):
+       dimensions[i]=cell[i][i]
+    """
     x_translation = np.array([[dimensions[0], 0, 0]], dtype=configuration.dtype)
     y_translation = np.array([[0, dimensions[1], 0]], dtype=configuration.dtype)
     z_translation = np.array([[0, 0, dimensions[2]]], dtype=configuration.dtype)
+    """
+
+    x_translation=cell[0][:]
+    y_translation=cell[1][:]
+    z_translation=cell[2][:]
 
     mask_true = np.ones(configuration.shape[0], dtype=bool)
-
+    in_or_out=  []
     for i_x, mask_x in [(-1., configuration[:, 0] > (dimensions[0] - r_cut)), (0., mask_true), (1., configuration[:, 0] < r_cut)]:
         for i_y, mask_y in [(-1., configuration[:, 1] > (dimensions[1] - r_cut)), (0., mask_true), (1., configuration[:, 1] < r_cut)]:
             for i_z, mask_z in [(-1., configuration[:, 2] > (dimensions[2] - r_cut)), (0., mask_true), (1., configuration[:, 2] < r_cut)]:
+
                 mask = mask_x * mask_y * mask_z
                 initial_atom_ids.append(np.nonzero(mask)[0])
                 periodized_configuration.append(configuration[mask] + i_x*x_translation + i_y*y_translation + i_z*z_translation)
+                if ((i_x==0) & (i_y==0) & (i_z==0)):
+                   #print(np.nonzero(mask)[0])
+                   in_or_out.append(np.nonzero(mask)[0])
+                else:
+                   y=np.nonzero(mask)[0]
+                   y[y >= 0 ] = -1
+                   in_or_out.append(y)
+
 
     periodized_configuration = np.concatenate(periodized_configuration, axis=0)
     initial_atom_ids = np.concatenate(initial_atom_ids, axis=0)
-
-    return periodized_configuration, initial_atom_ids
+    in_or_out=np.concatenate(in_or_out, axis=0)
+    """
+    test=in_or_out[in_or_out >= 0]
+    test2=in_or_out[in_or_out < 0]
+    print(len(test), len(test2), len(test) + len(test2))
+    """
+    return periodized_configuration, initial_atom_ids, in_or_out
