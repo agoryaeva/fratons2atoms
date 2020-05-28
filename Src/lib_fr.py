@@ -14,6 +14,52 @@ from ase import atoms
 from ase.io import read, iread, write
 from scipy import ndimage as ndi
 from scipy.signal import argrelextrema
+from sklearn.neighbors import KDTree
+
+def clean_coords (coords, coords_unperturbed, cell, r_cut, dist_to_remove):
+
+    periodized_coords, initial_atom_ids, in_or_out = periodize_configuration(coords, r_cut, cell)
+    tree = KDTree(periodized_coords, leaf_size=10)
+    dist, ind = tree.query(periodized_coords, k=2)
+    toot = dist[ (0 < dist) & (dist < dist_to_remove)]
+    ind_toot=ind[(0 < dist) & (dist < dist_to_remove)]
+    ind_unique=ind_toot
+    ind_deleted=[]
+
+    for indx in ind_toot:
+        if not(indx in ind_deleted):
+            i_del = ind[indx][-1]
+            ind_deleted.append(i_del)
+            ind_unique=np.delete(ind_unique,np.where(ind_unique == i_del), axis=0)
+            #debug print(indx, ind_unique)
+    #ind_buffer
+    #print(toot)
+    """
+    print("The initial index of atoms in double....:", ind_toot)
+    print("The final   index of selected atoms.....:", len(ind_unique) , ind_unique )
+    print("The final   index of deleted  atoms.....:", len(ind_deleted), ind_deleted)
+    """
+    for id in ind_unique:
+        if in_or_out[id] >= 0:
+            id_r=in_or_out[id]
+            coords[id_r] = 0.5*(coords[id_r] + periodized_coords[ind[id][-1]])
+    delete_real=[]
+    for id in ind_deleted:
+        if in_or_out[id] >= 0:
+         delete_real.append(in_or_out[id])
+    #print(delete_real)
+    """
+    print("coords before", coords.shape)
+    """
+    coords_clean=np.delete(coords,delete_real,axis=0)
+    coords_unperturbed_clean=np.delete(coords_unperturbed,delete_real,axis=0)
+    """
+    print("coords_clean after", coords_clean.shape)
+    """
+    return coords_clean,coords_unperturbed_clean ;
+
+
+
 
 
 

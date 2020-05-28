@@ -71,12 +71,14 @@ size_window=2
 
 #skewnes of the filter ... typical values 1, 2, 3 ... now 2.
 mult=1.7
-
+nult=0.0
 # the size of grid around central fraton to smooth: 2 is nice: 0 - no filter, 1 - why not ; 2 or 3 nice choices.
 m_grid_size = 2
 
 #r_cut in order to patch for PBC. r_cut>=max(a0_FCC, a0_bcc). E.g. in this case 8 is OK.
 r_cut=8
+#all the dimer of atoms at distances smaller that this distance will be replaced by only one atom in the middle of  the dimer:
+dist_to_remove=4.0
 
 write_fratoms=False
 #--------------------------------------------
@@ -134,8 +136,6 @@ for i in range(int(len(files2read))):
 
     file_h5 = in_dir + f
     np_dset = read_hdf5(file_h5)
-    # add for PBC ....
-    cell=set_pbc_cell(np_dset)
     # cutoff needed for patch the box in order to compute the distances ...
     #print(cell)
 
@@ -148,12 +148,15 @@ for i in range(int(len(files2read))):
     coords, sel_values = get_best_guess(np_dset_gaussian, d_grid=size_window)
     np_dset_gaussian = np_dset
     o2.append(len(sel_values))
+    # add for PBC ....
+    cell=set_pbc_cell(np_dset)
+    coords_ini, coords_unperturbed_ini = clean_coords (coords, coords, cell, r_cut, dist_to_remove)
+    #point_tree = spatial.cKDTree(periodized_configuration)
+    """
     #print("coords shape .....:", coords.shape)
-    periodized_coords, initial_atom_ids, in_or_out = periodize_configuration(coords, r_cut, cell)
     print("periodized coords...:", periodized_coords.shape)
     print("initial_atom_ids....:",  initial_atom_ids.shape)
     print("in_or_out...........:",  in_or_out.shape)
-    """
     print(initial_atom_ids)
     test=[]
     for i in  range(periodized_coords.shape[0]):
@@ -163,46 +166,12 @@ for i in range(int(len(files2read))):
           test.append(1)
     print(len(test))
     """
-    #point_tree = spatial.cKDTree(periodized_configuration)
-    tree = KDTree(periodized_coords, leaf_size=10)
-    dist, ind = tree.query(periodized_coords, k=2)
-    #print(dist.shape)
-    #print(ind.shape)
-    #print(dist[5860])
-    #print(ind[5860])
-    toot = dist[(0 < dist) & (dist < 4.0)]
-    ind_toot=ind[(0 < dist) & (dist < 4.0)]
-    ind_unique=ind_toot
-    ind_deleted=[]
-    for indx in ind_toot:
-        if not(indx in ind_deleted):
-            i_del = ind[indx][-1]
-            ind_deleted.append(i_del)
-            ind_unique=np.delete(ind_unique,np.where(ind_unique == i_del), axis=0)
-            #debug print(indx, ind_unique)
-    #ind_buffer
-    #print(toot)
-    print("The initial index of atoms in double....:", ind_toot)
-    print("The final   index of selected atoms.....:", len(ind_unique) , ind_unique )
-    print("The final   index of deleted  atoms.....:", len(ind_deleted), ind_deleted)
-
-    for id in ind_unique:
-        if in_or_out[id] >= 0:
-            id_r=in_or_out[id]
-            coords[id_r] = 0.5*(coords[id_r] + periodized_coords[ind[id][-1]])
-    delete_real=[]
-    for id in ind_deleted:
-        if in_or_out[id] >= 0:
-         delete_real.append(in_or_out[id])
-    #print(delete_real)
-    print("coords before", coords.shape)
-    coords=np.delete(coords,delete_real,axis=0)
-    print("coords after", coords.shape)
 
 
-
+    tree = KDTree(coords_ini, leaf_size=10)
+    dist, ind = tree.query(coords_ini, k=2)
+    toot = dist[(0 < dist) & (dist < dist_to_remove)]
     coor.append(int(len(toot)))
-
 
     name=f.split('.')[0]
 
@@ -244,16 +213,18 @@ for i in range(int(len(files2read))):
                     sign_dens=np.sign(val_dens)
                     abs_dens=abs(val_dens)
                     factor = factor + sign_dens*abs_dens**mult
-                    tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)
-                    tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)
-                    tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)
+                    dist = (float(i1uf)**2 + float(i2uf)**2 + float(i3uf)**2 )**nult
+                    tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)/dist
+                    tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)/dist
+                    tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)/dist
 
         coords_weighted[ic] = np.array([tmp_i, tmp_j, tmp_k])/factor
 
 
-    tree2= KDTree(coords_weighted, leaf_size=10)
-    dist, ind = tree2.query(coords_weighted, k=7)
-    toot2 = dist[(0 < dist) & (dist < 4.1)]
+    coords_end, coords_unperturbed_end  = clean_coords (coords_weighted, coords, cell, r_cut, dist_to_remove)
+    tree2= KDTree(coords_end, leaf_size=10)
+    dist, ind = tree2.query(coords_end, k=2)
+    toot2 = dist[(0 < dist) & (dist < dist_to_remove)]
     coor2.append(int(len(toot2)))
 
     print("%7d %s %8d %8d %8d" % (i+1, f, o2[-1], int(len(toot)),int(len(toot2))  ))
@@ -261,10 +232,10 @@ for i in range(int(len(files2read))):
 
     #writing brute coordinates after 2 filters
 #    if write_non-smooth_xyz = True:
-    write_atoms_xyz(np_dset, 0.0, name[5:], index_at=coords,   out_dir=out_dir_at)
+    write_atoms_xyz(np_dset, 0.0, name[5:], index_at=coords_ini,   out_dir=out_dir_at)
 
     #writing smooth  coordinates after 3 filters
-    write_atoms_smooth_xyz(np_dset, 0.0, name[5:], index_at=coords, r_at=coords_weighted,  out_dir=out_dir_at_smooth)
+    write_atoms_smooth_xyz(np_dset, 0.0, name[5:], index_at= coords_unperturbed_end, r_at= coords_end,   out_dir=out_dir_at_smooth)
 
 
     if write_fratoms==True:
