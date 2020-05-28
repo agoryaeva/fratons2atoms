@@ -55,13 +55,10 @@ if __name__ == '__main__':
     m_grid_size=args.m_grid_size
 """
 
-
-
 #--------------Inputs-----------------
 
 # Directory with *.h5 files to analyse
 in_dir = sys.argv[1]
-#in_dir='MD_02/'
 
 #First Gaussian filter: the standard value:
 sigma_gaussian=1.0
@@ -109,20 +106,9 @@ print ('  >>  Number of files to read: ............................... ', len(fi
 
 
 density=[]
-#free=np.loadtxt('MD_01/free_energy.dat')
-#debug print(free[:,0])
-
-
-
 o2=[]
-
-
-#for i in range(int(len(files2read)/10)):
-#    f=files2read[10*i]
-
 coor = []
 coor2 = []
-#for i in range(int(len(files2read))):
 for i in range(int(len(files2read))):
 #for i in range(1):
     f = files2read[i]
@@ -130,14 +116,9 @@ for i in range(int(len(files2read))):
     file_h5 = in_dir + f
     np_dset = read_hdf5(file_h5)
 
-    #np_dset = read_hdf5_old(file_h5, key)
-    # cutoff needed for patch the box in order to compute the distances ...
-    #print(cell)
-
     # first filter ....: define sigma
     np_dset_gaussian = gaussian_filter(np_dset, sigma=sigma_gaussian, order=0, mode='wrap')
 
-    #np_dset_gaussian = gaussian_filter(np_dset, sigma=2.1, order=0, mode='wrap')
 
     #second filter: define d_grid
     coords, sel_values = get_best_guess(np_dset_gaussian, d_grid=size_window)
@@ -153,7 +134,6 @@ for i in range(int(len(files2read))):
     coords_ini = coords
     coords_unperturbed_ini=coords
     """
-    #point_tree = spatial.cKDTree(periodized_configuration)
 
     #test if are some remaining small distances ...
     tree = KDTree(coords_ini, leaf_size=10)
@@ -166,7 +146,7 @@ for i in range(int(len(files2read))):
     #third ... filter: define mult & nult
     coords_weighted = np.array(coords, dtype=float)
     coords_weighted=get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size)
-    
+
     coords_end, coords_unperturbed_end  = clean_coords (coords_weighted, coords, cell, r_cut, dist_to_remove)
 
     """
@@ -183,7 +163,6 @@ for i in range(int(len(files2read))):
 
 
     #writing brute coordinates after 2 filters
-#    if write_non-smooth_xyz = True:
     write_atoms_xyz(np_dset, 0.0, name[5:], index_at=coords_ini,   out_dir=out_dir_at)
 
     #writing smooth  coordinates after 3 filters
