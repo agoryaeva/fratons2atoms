@@ -279,6 +279,71 @@ def get_best_guess(data, d_grid):
 
     return coords, values
 
+
+
+def get_best_guess_new(data, d_grid):
+    #-----------------Max Filter--------------------
+    footprint = ndi.generate_binary_structure(3,7)
+    # all fratons at local max are set to 1 all the others are 0
+    filtered = ndi.maximum_filter(data, footprint=footprint, mode='wrap') == data
+
+    #------------------Erosion----------------------
+    # preparing the erosion of the selections ...
+    # The visual definition of erosion from Wiki: https://en.wikipedia.org/wiki/Erosion_%28morphology%29
+    """
+    Suppose A is a 13 x 13 matrix and B is a 3 x 3 matrix:
+
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 0 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1               1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1               1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1               1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+    1 1 1 1 1 1 1 1 1 1 1 1 1
+
+    Assuming that the origin B is at its center, for each pixel in A superimpose the origin of B, if B is completely contained by A the pixel is retained, else deleted.
+
+    Therefore the Erosion of A by B is given by this 13 x 13 matrix.
+
+    0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 1 1 1 1 0 0 0 1 1 1 1 0
+    0 1 1 1 1 0 0 0 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0
+    """
+
+    idx = largest_indices(-data, data.shape[0]**3)
+    values = data [idx]
+    no_low =  int(data.shape[0]**3/4)
+    low_mean= np.sum(values[:no_low])/no_low
+    #print(values, len(values), low_mean)
+
+    #background = (data == 0)
+    background = (data <= low_mean)
+    eroded_background = ndi.binary_erosion(background, structure=footprint, border_value=1)
+    # xor operation between the fileter and background erosion.
+    mask_local_maxima = filtered ^ eroded_background
+    coords = np.asarray(np.where(mask_local_maxima)).T
+    values = data[mask_local_maxima]
+
+    return coords, values
+
+
+
 # - - - - - - - - - - - - - - - - - -
 
 def entropy (density, temperature):
@@ -307,11 +372,6 @@ def periodize_configuration(configuration, r_cut, cell):
     dimensions=np.zeros((3))
     for i in range(3):
        dimensions[i]=cell[i][i]
-    """
-    x_translation = np.array([[dimensions[0], 0, 0]], dtype=configuration.dtype)
-    y_translation = np.array([[0, dimensions[1], 0]], dtype=configuration.dtype)
-    z_translation = np.array([[0, 0, dimensions[2]]], dtype=configuration.dtype)
-    """
 
     x_translation=cell[0][:]
     y_translation=cell[1][:]
@@ -338,11 +398,6 @@ def periodize_configuration(configuration, r_cut, cell):
     periodized_configuration = np.concatenate(periodized_configuration, axis=0)
     initial_atom_ids = np.concatenate(initial_atom_ids, axis=0)
     in_or_out=np.concatenate(in_or_out, axis=0)
-    """
-    test=in_or_out[in_or_out >= 0]
-    test2=in_or_out[in_or_out < 0]
-    print(len(test), len(test2), len(test) + len(test2))
-    """
     return periodized_configuration, initial_atom_ids, in_or_out
 
 
@@ -382,7 +437,7 @@ def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mul
                     if  i3 <  0:
                         i3 = i3 + np_dset.shape[2]
                     val_dens = np_dset_gaussian[i1, i2, i3]
-                    """
+
                     sign_dens=np.sign(val_dens)
                     abs_dens=abs(val_dens)
                     factor = factor + sign_dens*abs_dens**mult
@@ -390,11 +445,13 @@ def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mul
                     tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)
                     tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)
                     tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)
+
                     """
                     factor = factor + val_dens**mult
                     dist = (float(i1uf)**2 + float(i2uf)**2 + float(i3uf)**2 )**nult
                     tmp_i = tmp_i   + val_dens**mult * float(i1uf)
                     tmp_j = tmp_j   + val_dens**mult * float(i2uf)
                     tmp_k = tmp_k   + val_dens**mult * float(i3uf)
+                    """
         coords_weighted[ic] = np.array([tmp_i, tmp_j, tmp_k])/factor
     return coords_weighted;
