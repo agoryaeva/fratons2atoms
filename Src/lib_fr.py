@@ -262,8 +262,6 @@ def write_fratons_xyz(np_dset, prefix_file, out_dir=None):
 
     return
 
-
-
 # - - - - - - - - - - - - - - - - - -
 
 def get_best_guess(data, d_grid):
@@ -403,11 +401,13 @@ def periodize_configuration(configuration, r_cut, cell):
 
 @jit(nopython=True)
 def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size):
-    #coords_weighted = np.array(coords, dtype=float)
-
+    #smooth - 1 old style Eq. 2 and 3 / smooth - 2 new style Eq 4, 5, 6
+    smooth=1
     m = m_grid_size
     for ic in range(len(coords)):
         val = coords[ic]
+        val_cent = np_dset_gaussian[val]
+
         #print(val, np_dset[val[0], val[1], val[2]])
         factor = 0.0
         tmp_i = 0.0
@@ -437,14 +437,27 @@ def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mul
                     if  i3 <  0:
                         i3 = i3 + np_dset.shape[2]
                     val_dens = np_dset_gaussian[i1, i2, i3]
-
                     sign_dens=np.sign(val_dens)
                     abs_dens=abs(val_dens)
-                    factor = factor + sign_dens*abs_dens**mult
-                    dist = (float(i1uf)**2 + float(i2uf)**2 + float(i3uf)**2 )**nult
-                    tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)
-                    tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)
-                    tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)
+                    if (smooth==1):
+                        factor = factor + sign_dens*abs_dens**mult
+                        tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(i1uf)
+                        tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(i2uf)
+                        tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(i3uf)
+
+
+                    if (smooth==2):
+                        if ((m1==0) & (m2==0) & (m3==0)):
+                            tmp_i = tmp_i
+                            tmp_j = tmp_j
+                            tmp_k = tmp_k
+
+                        else:
+                            factor = factor + sign_dens*abs_dens**mult
+                            r_m = float(m1)**2 + float(m2)**2 + float(m3)**2
+                            tmp_i = tmp_i   + sign_dens*abs_dens**mult * float(m1)/r_m**(nult/2)
+                            tmp_j = tmp_j   + sign_dens*abs_dens**mult * float(m2)/r_m**(nult/2)
+                            tmp_k = tmp_k   + sign_dens*abs_dens**mult * float(m3)/r_m**(nult/2)
 
                     """
                     factor = factor + val_dens**mult
@@ -453,5 +466,8 @@ def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mul
                     tmp_j = tmp_j   + val_dens**mult * float(i2uf)
                     tmp_k = tmp_k   + val_dens**mult * float(i3uf)
                     """
-        coords_weighted[ic] = np.array([tmp_i, tmp_j, tmp_k])/factor
+        if (smooth==1):
+            coords_weighted[ic] = np.array([tmp_i, tmp_j, tmp_k])/factor
+        if (smooth==2):
+            coords_weighted[ic] = coords[ic] + np.array([tmp_i, tmp_j, tmp_k])/factor
     return coords_weighted;

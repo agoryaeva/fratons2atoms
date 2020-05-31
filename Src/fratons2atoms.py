@@ -61,14 +61,14 @@ if __name__ == '__main__':
 in_dir = sys.argv[1]
 
 #First Gaussian filter: the standard value:
-sigma_gaussian=0.4
+sigma_gaussian=1.0
 
 #the size of the window in best_guess function:
 size_window=1
 
 #skewnes of the filter ... typical values 1, 2, 3 ... now 2.
 mult=2.0
-nult=0.0
+nult=1.0
 # the size of grid around central fraton to smooth: 2 is nice: 0 - no filter, 1 - why not ; 2 or 3 nice choices.
 m_grid_size = 2
 
@@ -103,6 +103,7 @@ files2read = select_type_files(in_dir, ftype, fkey)
 print ('     ')
 print (' ----------------------- DIRECTORY: %s ------------------------' %in_dir)
 print ('  >>  Number of files to read: ............................... ', len(files2read))
+print ('  >>  No   name file         at1    at1_clean   err_at1 err_end at2_clean   at2   err_end')
 
 
 density=[]
@@ -118,8 +119,6 @@ for i in range(int(len(files2read))):
 
     # first filter ....: define sigma
     np_dset_gaussian = gaussian_filter(np_dset, sigma=sigma_gaussian, order=0, mode='wrap')
-    #np_dset_gaussian = ndi.sobel(np_dset, mode='wrap')
-    #np_dset_gaussian = ndi.uniform_filter(np_dset, size=3, mode='wrap')
 
 
 
@@ -165,7 +164,7 @@ for i in range(int(len(files2read))):
     toot2 = dist[(0 < dist) & (dist < dist_to_remove)]
     coor2.append(int(len(toot2)))
 
-    print("%7d %s %8d %8d %8d %8d %8d" % (i+1, f, o2[-1], removed_ini, int(len(toot)), removed_end, int(len(toot2))  ))
+    print("%7d %s %8d %8d %8d %8d %8d %8d %8d" % (i+1, f, len(coords), len(coords_ini), removed_ini, len(toot), len(coords_end), removed_end, len(toot2)))
 
 
     #writing brute coordinates after 2 filters
