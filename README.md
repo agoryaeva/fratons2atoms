@@ -1,12 +1,19 @@
 # fratons2atoms
 
-python package
+python package to convert atomic densities ("fratons") to atomc positions
+Authors: Alexandra M. Goryaeva, M.-C. Marinica
 
 Purposes:
 -----------------
-Conversion of h5 files with atomic density to xyz coordinates
+Conversion of binary h5 files with atomic densities  ("fratons") to xyz coordinates
 
 Usage:
 -----------------
 
-Authors: Alexandra M. Goryaeva, M.-C. Marinica
+Notes on choosing parameters:
+------------------------------
+
+Installation:
+-----------------
+
+
