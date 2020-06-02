@@ -9,6 +9,9 @@ Conversion of binary h5 files with atomic densities  ("fratons") to xyz coordina
 
 Description
 ----------------
+Description of the three filters, some equations (are they possible??) and indication which parapetrs from the equations must be provided as input in the script..  
+
+### Notes on choosing parameters:
 
 Usage:
 -----------------
@@ -31,7 +34,6 @@ With this command the script `fratons2atoms.py` will read the h5 files in the `<
 
   ##### Examaple: 
 
-### Notes on choosing parameters:
 
 
 Installation:
