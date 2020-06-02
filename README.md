@@ -11,14 +11,14 @@ Usage:
 -----------------
 Run the script with default options:
 
->> python3 fratons2atoms.py <path> <a0>
+python3 fratons2atoms.py <path> <a0>
   
   Using this command the script fratons2atoms.py will read the h5 files in the <path> directory and set the default parameters for the convertion based on the given <a0> in fraton units. In case the simulation cell contains more than one phase with different <a0>, the smallest one should be provided. 
   
   Exmaple: 
   To convert the calculations of the transition between fcc with a0=8.0 and bcc with a0=6.5 that are stored in Examples/BCC-6.5_FCC_8/ 
   
-  >> python3 fratons2atoms.py Examples/BCC-6.5_FCC_8/ 6.5
+  python3 fratons2atoms.py Examples/BCC-6.5_FCC_8/ 6.5
    
 
 Notes on choosing parameters:
