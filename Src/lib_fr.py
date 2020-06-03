@@ -262,6 +262,72 @@ def write_fratons_xyz(np_dset, prefix_file, out_dir=None):
 
     return
 
+
+
+# - - - - - - - - - - - - - - - - - -
+def convolution_sharpen (data):
+
+    # ------ sharpen kernel definition -----
+    #one of the best ...
+    """
+    # dxa 36 ....
+    ac=1.0
+    a1=1.0
+    a2=0.0
+    """
+    #dxa 3.8
+    ac=5.0
+    a1=1.0
+    a2=0.0
+    v1 = np.array( [[a2,  a2, a2], [a2, a1, a2], [a2, a2, a2]] )
+    v2 = np.array( [[a2,  a1, a2], [a1, ac, a1], [a2, a1, a2]] )
+    v3 = np.array( [[a2,  a2, a2], [a2, a1, a2], [a2, a2, a2]] )
+
+    kernel_average_3  = np.array([ v1, v2, v1 ])
+    norm = np.sum(kernel_average_3)
+    kernel_average_3 = kernel_average_3 / norm
+
+    # ------ sharpen kernel definition -----
+    v1 = np.array( [[0.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, 0.0]]  )
+    v2 = np.array( [[0.0, -1.0, 0.0],[-1.0, 7.0, -1.0],[0.0, -1.0, 0.0]] )
+    v3 = np.array( [[0.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, 0.0]]  )
+
+    kernel_sharpen  = np.array([ v1, v2, v1 ])
+
+    """
+    # ------ edge kernel definition -----
+    v1 = np.array( [[-1.0,-1.0, -1.0],[-1.0, -1.0, -1.0],[-1.0, -1.0, -1.0]]  )
+    v2 = np.array( [[-1.0, -1.0,-1.0],[-1.0, 27.0, -1.0],[-1.0, -1.0, -1.0]] )
+
+    kernel_edge  = np.array([ v1, v2, v1 ])
+    """
+    #antisharpen
+    ac=25.0
+    #uniform
+    #ac=1.0
+    #extremely anti sharpen
+    #ac=50
+    a1=1.0
+    a2=1.0
+    az=0.0
+
+    v1 = np.array([ [az,az,az,az,az], [az,az,az,az,az],[az,az,a2,az,az],[az,az,az,az,az],[az,az,az,az,az] ])
+    v2 = np.array([ [az,az,az,az,az], [az,az,a2,az,az],[az,a1,a2,a1,az],[az,az,a2,az,az],[az,az,az,az,az] ])
+    v3 = np.array([ [az,az,a2,az,az], [az,a2,a1,a2,az],[a2,a1,ac,a1,a2],[az,a2,a1,a2,az],[az,az,a2,az,az] ])
+
+    kernel_average_5  = np.array([ v1, v2, v3, v2, v1 ])
+    norm = np.sum(kernel_average_5)
+    kernel_average_5 = kernel_average_5 / norm
+
+    data_convoluted = ndi.convolve(data, kernel_average_5, mode='wrap')
+    #data_convoluted = ndi.convolve(data, kernel_sharpen)
+
+    return data_convoluted
+
+
+
+
+
 # - - - - - - - - - - - - - - - - - -
 
 def get_best_guess(data, d_grid):
@@ -402,7 +468,7 @@ def periodize_configuration(configuration, r_cut, cell):
 @jit(nopython=True)
 def get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size):
     #smooth - 1 old style Eq. 2 and 3 / smooth - 2 new style Eq 4, 5, 6
-    smooth=1
+    smooth=2
     m = m_grid_size
     for ic in range(len(coords)):
         val = coords[ic]

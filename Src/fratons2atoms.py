@@ -61,7 +61,7 @@ if __name__ == '__main__':
 in_dir = sys.argv[1]
 
 #First Gaussian filter: the standard value:
-sigma_gaussian=1.0
+sigma_gaussian=0.5
 
 #the size of the window in best_guess function:
 size_window=1
@@ -75,7 +75,7 @@ m_grid_size = 2
 #r_cut in order to patch for PBC. r_cut>=max(a0_FCC, a0_bcc). E.g. in this case 8 is OK.
 r_cut=8
 #all the dimer of atoms at distances smaller that this distance will be replaced by only one atom in the middle of  the dimer:
-dist_to_remove=4.0
+dist_to_remove=3.8
 
 write_fratoms=False
 #--------------------------------------------
@@ -117,12 +117,23 @@ for i in range(int(len(files2read))):
     file_h5 = in_dir + f
     np_dset = read_hdf5(file_h5)
 
-    # first filter ....: define sigma
+    # first filter ....: define sigma : but probably should be desactivated. O(N_fratons) operation
     np_dset_gaussian = gaussian_filter(np_dset, sigma=sigma_gaussian, order=0, mode='wrap')
 
+    # convolution home-made filter. O(N_fratons) operation
+    np_dset_gaussian = convolution_sharpen(np_dset_gaussian)
+
+    """
+    #multiple shaprpen not tested version ... but priobably work if only shifted ...
+    np_dset_gaussian0 = convolution_sharpen(np_dset)
+    np_dset_gaussian = convolution_sharpen(np_dset_gaussian0)
+    """
+    #print(np_dset_gaussian.shape)
+    #np_dset_gaussian = np_dset
 
 
-    #second filter: define d_grid
+
+    #second filter: define d_grid ; O(N_fratons) operation
     coords, sel_values = get_best_guess(np_dset_gaussian, d_grid=size_window)
     #coords, sel_values = get_best_guess_new(np_dset_gaussian, d_grid=size_window)
     #print("new", coords.shape)
@@ -130,7 +141,7 @@ for i in range(int(len(files2read))):
     np_dset_gaussian = np_dset
     o2.append(len(sel_values))
 
-    # add for PBC ....
+    # add for PBC and clean coordinates for small distances: O(4*N_atoms * N_close_atoms**2) operation
     cell=set_pbc_cell(np_dset)
     coords_ini, coords_unperturbed_ini = clean_coords (coords, coords, cell, r_cut, dist_to_remove)
 
@@ -139,7 +150,7 @@ for i in range(int(len(files2read))):
     coords_unperturbed_ini=coords
     """
 
-    #test if are some remaining small distances ...
+    #test if are some remaining small distances ... ; O(N_atoms * ln(N_atoms)*(k-1)) operation  
     tree = KDTree(coords_ini, leaf_size=10)
     dist, ind = tree.query(coords_ini, k=2)
     toot = dist[(0 < dist) & (dist < dist_to_remove)]
@@ -147,10 +158,11 @@ for i in range(int(len(files2read))):
 
     name=f.split('.')[0]
 
-    #third ... filter: define mult & nult
+    #third ... filter: define mult & nult, O(4*N_atoms*mult**3) operation
     coords_weighted = np.array(coords, dtype=float)
     coords_weighted=get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size)
 
+    #clean the final coorrdinates:  O(N_atoms * N_close_atoms**2) operation
     coords_end, coords_unperturbed_end  = clean_coords (coords_weighted, coords, cell, r_cut, dist_to_remove)
     removed_end = -len(coords_end) + len(coords_weighted)
     removed_ini = -len(coords_ini) + len(coords)
@@ -158,7 +170,7 @@ for i in range(int(len(files2read))):
     coords_end = coords_weighted
     coords_unperturbed_end=coords
     """
-    #test if are some remaining small distances ...
+    #test if are some remaining small distances ...O(N_atoms * ln(N_atoms*(k-1)) operation
     tree2= KDTree(coords_end, leaf_size=10)
     dist, ind = tree2.query(coords_end, k=2)
     toot2 = dist[(0 < dist) & (dist < dist_to_remove)]
