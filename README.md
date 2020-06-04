@@ -1,7 +1,9 @@
 # fratons2atoms
 
 python package to convert atomic densities ("fratons") from quasiparticle calculations to Cartesian coordinates of atomic positions
+
 **Authors:** A.M. Goryaeva, M.C. Marinica
+
 alexandra.goryaeva (at) univ.rouen.fr
 
 Purposes:
@@ -13,7 +15,7 @@ Description
 The atomic coordinates are written from the distribution of atomic densities after applying three consecutive filters:
 
 ### Filter 1:
-removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
+This filter removes numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
 The densities ρi1,i2,i3 from the grid ri1,i2,i3 are convoluted with a Gaussian with standard deviation `sigma`: 
 
@@ -28,7 +30,7 @@ Then, in order to enhance and better localize the center of the atom, the convol
 
 
 ### Filter 2:
-selecting the nodes of fratons I1,2,3 that are best candidates for being identified as atoms. 
+This filter selects the nodes of fratons I1,2,3 that are best candidates for being identified as atoms. 
 
 The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlled by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
 The examples of such windows constructed in bcc with a0=6.5 in fraton units is provided below:
@@ -37,19 +39,20 @@ The examples of such windows constructed in bcc with a0=6.5 in fraton units is p
 <img src="Documentation/pictures/size_window.png" width="350" >
 
 ### Filter3:
-computing "smooth" atomic coodinates (e.g., coordinates that are not necessarily locted on to the nodes of the grid) based on the nodes I1,2,3 that were identified by the Filter2. 
+This filter computes "smooth" xyz atomic coodinates (e.g., coordinates that are not necessarily locted on to the nodes of the grid) based on the nodes I1,2,3 that were identified by the Filter2. 
 
-The final coordinates are obtained using a decreasing weighted average:
+The xyz coordinates are obtained using a decreasing weighted average:
 
 
 <img src="Documentation/equations/weighted_average.png" width="500" >
 
 with the normalization factor:
-<img src="Documentation/equations/normalization_factor.png" width="500" >
+<img src="Documentation/equations/normalization_factor.png" width="400" >
 
 The "smoothening" is controlled by the two exponents: `mu` and `nu` and by the size `m_grid` of the selected area for "smoothening"
 
-<img src="Documentation/pictures/m_grid1.png" width="300" >
+<img src="Documentation/pictures/m_grid1.png" width="250" >
+
 
 Default parameterization of the filters:
 -----------------
@@ -115,10 +118,10 @@ To install from the terminal, use:
 #### Required python3 packages:
 
 ```
-- numpy (version >= 1.17.4)
-- h5py  (version >= 2.10.0)
+- numpy   (version >= 1.17.4)
+- h5py    (version >= 2.10.0)
 - sklearn (version >= 0.21.3)
-- scipy  (version >= 1.4.1)
+- scipy   (version >= 1.4.1)
 - numba   (version >= 0.49.1)
 - natsort (version >= 7.0.1)
 
