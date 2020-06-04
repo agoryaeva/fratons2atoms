@@ -14,21 +14,31 @@ The atomic coordinates are written from the distribution of atomic densities aft
 - **Filter 1:** 
 removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
-The densities are convoluted with a Gaussian with standard deviation `sigma`. 
+The densities 
+![alt text](Documentation/equations/gho.png)
+associated with the grid 
+![alt text](Documentation/equations/grid_r.png) 
+with 
+![alt text](Documentation/equations/i_Ng.png) 
+are convoluted with a Gaussian with standard deviation `sigma`: 
 
-<img src="Documentation/equations/rho_Gaussian.png" width="600" >
+<img src="Documentation/equations/rho_Gaussian.png" width="500" >
 
+Then, in order to enhance and better localize the center of the atom, the convoluted densities can be further optionally corrected using a kernel mask, `mask`, which mimics a spherical shape. The examples of the implemented `333` and `555` masks are illustrated below
 
-Then, the convoluted densities can be optionally corrected using a kernel `mask`
-
-<img src="Documentation/pictures/mask_333.png" width="600" >
+<img src="Documentation/pictures/mask_333.png" width="450" >
 
 <img src="Documentation/pictures/mask_555.png" width="600" >
+
+
 
 - **Filter 2:**
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
 
 The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlled by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
+
+
+<img src="Documentation/pictures/size_window.png" width="450" >
 
 - **Filter 3**
 computing "smooth" atomic coodinates (e.g., coordinates that are not necessarily locted on to the nodes of the grid). 
