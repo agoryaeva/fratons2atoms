@@ -1,6 +1,6 @@
 # fratons2atoms
 
-python package to convert atomic densities ("fratons") from quasiparticle calculations to Cartesian coordinates of atomic positions
+python package to convert atomic densities ("fratons") from quasiparticle calculations [[1](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.89.014111)] to Cartesian coordinates of atomic positions
 
 **Authors:** A.M. Goryaeva, M.C. Marinica
 
@@ -8,7 +8,7 @@ alexandra.goryaeva (at) univ.rouen.fr
 
 Purposes:
 -----------------
-Conversion of binary h5 files with atomic densities  ("fratons") to xyz coordinates that can be visualized and analyzed with ovito and serve as an input for atomistic calculations
+Conversion of binary h5 files with atomic densities  ("fratons") to xyz coordinates that can be visualized and analyzed with [ovito](https://www.ovito.org/) and serve as an input for atomistic calculations
 
 Description
 ----------------
