@@ -41,7 +41,7 @@ The default parameterization of the fileters for the most commonly used resoluti
 
 Usage:
 -----------------
-### Running the script with default options:
+#### Running the script with default options:
 
 ```
 > python3 fratons2atoms.py --dir=<path> --a0=<a0>
@@ -57,7 +57,7 @@ With this command the script `fratons2atoms.py` will read the h5 files in the `<
  > python3 fratons2atoms.py  --dir=Examples/BCC-6.5_FCC_8/  --a0=6.5
  ``` 
  
-### Running the script with custom parameters:
+#### Running the script with custom parameters:
 
 To convert the example provided above using different parameterization of filters, one can provide the following custom values:
 
@@ -86,6 +86,19 @@ To install from the terminal, use:
 ```
 > git clone https://github.com/agoryaeva/fratons2atoms.git
 ```
+
+#### Required python3 packages:
+
+```
+- numpy
+- h5py
+- sklearn
+- scipy
+- numba
+- natsort
+
+```
+
 
 Authors:
 ----------
