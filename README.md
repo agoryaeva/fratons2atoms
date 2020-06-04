@@ -1,6 +1,6 @@
 # fratons2atoms
 
-python package to convert atomic densities ("fratons") from quasiparticle calculations to atomc positions
+python package to convert atomic densities ("fratons") from quasiparticle calculations to Cartesian coordinates of atomc positions
 
 
 Purposes:
@@ -14,25 +14,30 @@ The atomic coordinates are written from the distribution of atomic densities aft
 - **Filter 1:** 
 removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
-The densities are convoluted with a Gaussian with standard deviation *sigma*. Then, the convoluted densities can be optionally corrected using a kernel *mask*
+The densities are convoluted with a Gaussian with standard deviation `sigma`. Then, the convoluted densities can be optionally corrected using a kernel `mask`
 
 - **Filter 2:**
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
 
-The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlleded by the input parameter *size_window*. The real dimensions of the of the 3D window correspond to the 2* *size_window*+1 along each side. 
+The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlleded by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
 
 - **Filter 3**
-computing "smooth" atomic coodinates (e.g., not limited to the nodes of the grid (integes) ). 
+computing "smooth" atomic coodinates (e.g., coordinates that are not nesesserely locted on to the nodes of the grid). 
 
-The final coordinates are obtained using a decreasing weighted average. The "smoothening" is controlled by the two exponents: *mu* and *nu* and by the size *m_grid* of the selected area for "smootheing"
+The final coordinates are obtained using a decreasing weighted average. The "smoothening" is controlled by the two exponents: `mu` and `nu` and by the size `m_grid` of the selected area for "smoothening"
 
-Input parameters:
+Default parameterization of the filters:
 -----------------
+The default parameterization of the fileters for the most commonly used resolutions of the quasiparticle calculations:
 
-### Filters related
-
-### Correction 
-
+|  Parameter    |  a0=6.5 & a0=8.0  |  a0=13.0 & a0=16.0   | 
+|---------------|-------------------|----------------------|
+| `sigma`       |        0.5        |         1.1          | 
+|  `mask`       |        none       |         none         | 
+| `size_window` |          1        |          3           | 
+| `mu`          |          2.0      |          2.0         | 
+| `nu`          |          1.0      |          1.0         | 
+| `m_grid`      |          2        |          3           | 
 
 Usage:
 -----------------
@@ -61,7 +66,7 @@ To convert the example provided above using different parameterization of filter
 - `--size_window` size of the 3D window in the Filter2
 - `--mu` first exponent to compute the weighted average in the Filter3
 - `--nu` second exponent to compute the weighted average in the Filter3
-- `grid_m`  size of the grid for averaging in the Filter3
+- `--grid_m`  size of the grid for averaging in the Filter3
 
 
 
@@ -71,7 +76,7 @@ To convert the example provided above using different parameterization of filter
  > python3 fratons2atoms.py  --dir=Examples/BCC-6.5_FCC_8/  --a0=6.5 --mask=333 --nu=0 
  ``` 
 
-This will add the 3x3x3 kernel mask to the Filter1 and set the exponent *nu* from the Filter3 to 0. The other input parameters will remain as in the default options.
+This will add the 3x3x3 kernel mask to the Filter1 and set the exponent `nu` from the Filter3 to 0. The other input parameters will remain as in the default options.
 
 
 Installation:
