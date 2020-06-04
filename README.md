@@ -14,7 +14,10 @@ The atomic coordinates are written from the distribution of atomic densities aft
 - **Filter 1:** 
 removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
-The densities are convoluted with a Gaussian with standard deviation `sigma`. Then, the convoluted densities can be optionally corrected using a kernel `mask`
+The densities are convoluted with a Gaussian with standard deviation `sigma`. 
+![](Documentation/equations/rho_Gaussian.png)
+
+Then, the convoluted densities can be optionally corrected using a kernel `mask`
 
 - **Filter 2:**
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
