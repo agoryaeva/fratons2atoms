@@ -1,6 +1,6 @@
 # fratons2atoms
 
-python package to convert atomic densities ("fratons") from quasiparticle calculations to Cartesian coordinates of atomc positions
+python package to convert atomic densities ("fratons") from quasiparticle calculations to Cartesian coordinates of atomic positions
 
 
 Purposes:
@@ -90,12 +90,12 @@ To install from the terminal, use:
 #### Required python3 packages:
 
 ```
-- numpy
-- h5py
-- sklearn
-- scipy
-- numba
-- natsort
+- numpy (version >= 1.17.4)
+- h5py  (version >= 2.10.0)
+- sklearn (version >= 0.21.3)
+- scipy  (version >= 1.4.1)
+- numba   (version >= 0.49.1)
+- natsort (version >= 7.0.1)
 
 ```
 
