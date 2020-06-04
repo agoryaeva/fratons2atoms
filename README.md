@@ -14,13 +14,7 @@ The atomic coordinates are written from the distribution of atomic densities aft
 - **Filter 1:** 
 removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
-The densities 
-![alt text](Documentation/equations/gho.png)
-associated with the grid 
-![alt text](Documentation/equations/grid_r.png) 
-with 
-![alt text](Documentation/equations/i_Ng.png) 
-are convoluted with a Gaussian with standard deviation `sigma`: 
+The densities ρi1,i2,i3 from the grid ri1,i2,i3 are convoluted with a Gaussian with standard deviation `sigma`: 
 
 <img src="Documentation/equations/rho_Gaussian.png" width="500" >
 
