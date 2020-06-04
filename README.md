@@ -16,11 +16,14 @@ removing numerical fluctuations in the amplitude of the initial densities (due t
 
 The densities are convoluted with a Gaussian with standard deviation `sigma`. 
 
-<img src="Documentation/equations/rho_Gaussian.png" width="200" >
+<img src="Documentation/equations/rho_Gaussian.png" width="600" >
 
-![](Documentation/equations/rho_Gaussian.png)
 
 Then, the convoluted densities can be optionally corrected using a kernel `mask`
+
+<img src="Documentation/pictures/mask_333.png" width="600" >
+
+<img src="Documentation/pictures/mask_555.png" width="600" >
 
 - **Filter 2:**
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
