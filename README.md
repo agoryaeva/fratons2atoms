@@ -15,7 +15,9 @@ The atomic coordinates are written from the distribution of atomic densities aft
 removing numerical fluctuations in the amplitude of the initial densities (due to the numerical integration, thermal fluctuations, etc.) 
 
 The densities are convoluted with a Gaussian with standard deviation `sigma`. 
-< img src="Documentation/equations/rho_Gaussian.png" width="200">
+
+<img src="Documentation/equations/rho_Gaussian.png" width="200" >
+
 ![](Documentation/equations/rho_Gaussian.png)
 
 Then, the convoluted densities can be optionally corrected using a kernel `mask`
