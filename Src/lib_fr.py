@@ -19,33 +19,74 @@ from numba import jit
 
 
 def clean_coords (coords, coords_unperturbed, cell, r_cut, dist_to_remove):
-
-    periodized_coords, initial_atom_ids, in_or_out = periodize_configuration(coords, r_cut, cell)
-    tree = KDTree(periodized_coords, leaf_size=10)
-    dist, ind = tree.query(periodized_coords, k=2)
-    toot = dist[ (0 < dist) & (dist < dist_to_remove)]
+    # 0 - no PBC ; 1 - PBC
+    period=0
+    if period==1:
+        periodized_coords, initial_atom_ids, in_or_out = periodize_configuration(coords, r_cut, cell)
+        tree = KDTree(periodized_coords, leaf_size=10)
+        dist, ind = tree.query(periodized_coords, k=2)
+    if period ==0:
+        tree = KDTree(coords, leaf_size=10)
+        dist, ind = tree.query(coords, k=2)
+        in_or_out=[]
+        for i in range(len(coords)):
+            in_or_out.append(i)
+    #print(ind.shape, dist.shape, periodized_coords.shape)
+    dist1 = dist[:,1]
+    if np.any(dist1==0.0):
+       print("BIG PROBLEM: THERE ARE ATOMS ON THE SAME POSTION. ASK THE MASTER. NO WAY TO IMPROVE.")
+       exit(0)
+    toot = dist [(0 < dist) & (dist < dist_to_remove)]
     ind_toot=ind[(0 < dist) & (dist < dist_to_remove)]
-    ind_unique=ind_toot
-    ind_deleted=[]
+    ind_toot2=ind[dist1 < dist_to_remove, :]
+    toot2 = dist1 [(dist1 < dist_to_remove)]
+    #print(toot2)
+    #print(toot)
 
-    for indx in ind_toot:
-        if not(indx in ind_deleted):
-            i_del = ind[indx][-1]
+    ind_unique=np.asarray(ind_toot, dtype=int)
+    ind_unique2=np.asarray(ind_toot2, dtype=int)
+    """
+    print(ind_unique.shape)
+    print(ind_unique2.shape)
+    print(len(ind_unique),   len(np.unique(ind_unique)), len(ind_unique2), len(np.unique(ind_unique2)) )
+    """
+    ind_deleted=[]
+    itest0=ind_unique2[:,0]
+    itest1=ind_unique2[:,1]
+    """
+    for i in range(len(itest0)):
+        print(i, itest0[i], itest1[i], ind_unique2[i], toot2[i], dist1[i], dist[itest0[i],0], dist[itest0[i],1])
+    print('it', len(itest0), len(np.unique(itest0)), len(itest1), len(np.unique(itest1)))
+    """
+    """
+    for indx in ind_unique2:
+        if   not np.any(ind_deleted == indx):
+            i_del = ind[indx,1]
             ind_deleted.append(i_del)
-            ind_unique=np.delete(ind_unique,np.where(ind_unique == i_del), axis=0)
+            #print("before ", len(ind_unique))
+            ind_unique2=np.delete(ind_unique2,np.where(ind_unique2 == i_del), axis=0)
+            #print("after  ", len(ind_unique))
             #debug print(indx, ind_unique)
     #ind_buffer
     #print(toot)
+
+
+    print("The initial index of atoms in double....:", len(ind_toot))
+    print("The final   index of selected atoms.....:", len(ind_unique))   # , ind_unique )
+    print("The final   index of deleted  atoms.....:", len(ind_deleted)) #, ind_deleted)
     """
-    print("The initial index of atoms in double....:", ind_toot)
-    print("The final   index of selected atoms.....:", len(ind_unique) , ind_unique )
-    print("The final   index of deleted  atoms.....:", len(ind_deleted), ind_deleted)
-    """
-    for id in ind_unique:
+
+    for id in itest0:
         if in_or_out[id] >= 0:
             id_r=in_or_out[id]
-            coords[id_r] = 0.5*(coords[id_r] + periodized_coords[ind[id][-1]])
+            if period==1:
+                coords[id_r] = 0.5*(coords[id_r] + periodized_coords[ind[id][-1]])
+            if period==0:
+                coords[id_r] = 0.5*(coords[id_r] + coords[ind[id][-1]])
+
+
     delete_real=[]
+    ind_deleted=np.unique(itest1)
     for id in ind_deleted:
         if in_or_out[id] >= 0:
          delete_real.append(in_or_out[id])
@@ -158,6 +199,10 @@ def write_atoms_xyz(np_dset, threshold, prefix_file, index_at, out_dir=None):
     #idx_sel = np.where( np_dset > threshold)
     #if  index_at != None:
     idx_sel = index_at
+    """
+    print(idx_sel.shape)
+    print(index_at.shape)
+    """
     #else:
     """
     #    idx_sel = np.where( abs(np_dset) > threshold)
@@ -319,6 +364,7 @@ def convolution_sharpen (data):
     norm = np.sum(kernel_average_5)
     kernel_average_5 = kernel_average_5 / norm
 
+    #data_convoluted = ndi.convolve(data, kernel_average_5, mode='wrap', origin=0)
     data_convoluted = ndi.convolve(data, kernel_average_5, mode='wrap')
     #data_convoluted = ndi.convolve(data, kernel_sharpen)
 
@@ -337,6 +383,11 @@ def get_best_guess(data, d_grid):
     footprint[d_grid, d_grid, d_grid] = 0
 
     filtered = ndi.maximum_filter(data, footprint=footprint, mode='wrap')
+    print("filt")
+    print(filtered)
+    print("data")
+    print(data)
+    exit(0)
     mask_local_maxima = data > filtered
     coords = np.asarray(np.where(mask_local_maxima)).T
     values = data[mask_local_maxima]
