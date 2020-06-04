@@ -19,10 +19,10 @@ The densities are convoluted with a Gaussian with standard deviation `sigma`. Th
 - **Filter 2:**
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
 
-The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlleded by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
+The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlled by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
 
 - **Filter 3**
-computing "smooth" atomic coodinates (e.g., coordinates that are not nesesserely locted on to the nodes of the grid). 
+computing "smooth" atomic coodinates (e.g., coordinates that are not necessarily locted on to the nodes of the grid). 
 
 The final coordinates are obtained using a decreasing weighted average. The "smoothening" is controlled by the two exponents: `mu` and `nu` and by the size `m_grid` of the selected area for "smoothening"
 
