@@ -1,6 +1,6 @@
 # fratons2atoms
 
-python package to convert atomic densities ("fratons") from quasiparticle calculations [[1](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.89.014111)] to Cartesian coordinates of atomic positions
+python package to convert atomic densities ("fratons") from quasiparticle calculations [[1](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.89.014111), [2](https://www.nature.com/articles/npjcompumats201513)] to Cartesian coordinates of atomic positions
 
 **Authors:** A.M. Goryaeva, M.C. Marinica
 
