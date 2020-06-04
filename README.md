@@ -18,11 +18,11 @@ The densities ρi1,i2,i3 from the grid ri1,i2,i3 are convoluted with a Gaussian 
 
 <img src="Documentation/equations/rho_Gaussian.png" width="500" >
 
-Then, in order to enhance and better localize the center of the atom, the convoluted densities can be further optionally corrected using a kernel mask, `mask`, which mimics a spherical shape. The examples of the implemented `333` and `555` masks are illustrated below
+Then, in order to enhance and better localize the center of the atom, the convoluted densities can be further optionally corrected using a kernel `mask`, which mimics a spherical shape. The examples of the implemented `333` and `555` masks are illustrated below
 
-<img src="Documentation/pictures/mask_333.png" width="450" >
+<img src="Documentation/pictures/mask_333.png" width="400" >
 
-<img src="Documentation/pictures/mask_555.png" width="600" >
+<img src="Documentation/pictures/mask_555.png" width="500" >
 
 
 
@@ -30,6 +30,7 @@ Then, in order to enhance and better localize the center of the atom, the convol
 selecting the nodes of fratons that are best candidates for being identified as atoms. 
 
 The local maxima of the atomic densities are extracted using a 3D window around a node of the simulation grid. The size of the window is controlled by the input parameter `size_window`. The real dimensions of the of the 3D window correspond to `2* size_window+1` along each side. 
+The examples of such windows constructed in bcc with a0=6.5 in fraton units is provided below:
 
 
 <img src="Documentation/pictures/size_window.png" width="450" >
@@ -37,7 +38,17 @@ The local maxima of the atomic densities are extracted using a 3D window around 
 - **Filter 3**
 computing "smooth" atomic coodinates (e.g., coordinates that are not necessarily locted on to the nodes of the grid). 
 
-The final coordinates are obtained using a decreasing weighted average. The "smoothening" is controlled by the two exponents: `mu` and `nu` and by the size `m_grid` of the selected area for "smoothening"
+The final coordinates are obtained using a decreasing weighted average:
+
+
+<img src="Documentation/equations/weighted_average.png" width="500" >
+
+with the normalization factor:
+<img src="Documentation/equations/normalisation_factor.png" width="500" >
+
+The "smoothening" is controlled by the two exponents: `mu` and `nu` and by the size `m_grid` of the selected area for "smoothening"
+
+<img src="Documentation/pictures/m_grid1.png" width="450" >
 
 Default parameterization of the filters:
 -----------------
