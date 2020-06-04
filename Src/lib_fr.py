@@ -310,7 +310,7 @@ def write_fratons_xyz(np_dset, prefix_file, out_dir=None):
 
 
 # - - - - - - - - - - - - - - - - - -
-def convolution_sharpen (data):
+def convolution_sharpen (data, mask):
 
     # ------ sharpen kernel definition -----
     #one of the best ...
@@ -363,9 +363,14 @@ def convolution_sharpen (data):
     kernel_average_5  = np.array([ v1, v2, v3, v2, v1 ])
     norm = np.sum(kernel_average_5)
     kernel_average_5 = kernel_average_5 / norm
-
+    
+    if mask == '333':
+        kernel_average = kernel_average_3
+    elif mask == '555':
+        kernel_average = kernel_average_5
+    
     #data_convoluted = ndi.convolve(data, kernel_average_5, mode='wrap', origin=0)
-    data_convoluted = ndi.convolve(data, kernel_average_5, mode='wrap')
+    data_convoluted = ndi.convolve(data, kernel_average, mode='wrap')
     #data_convoluted = ndi.convolve(data, kernel_sharpen)
 
     return data_convoluted
@@ -383,11 +388,11 @@ def get_best_guess(data, d_grid):
     footprint[d_grid, d_grid, d_grid] = 0
 
     filtered = ndi.maximum_filter(data, footprint=footprint, mode='wrap')
-    print("filt")
-    print(filtered)
-    print("data")
-    print(data)
-    exit(0)
+    #print("filt")
+    #print(filtered)
+    #print("data")
+    #print(data)
+    #exit(0)
     mask_local_maxima = data > filtered
     coords = np.asarray(np.where(mask_local_maxima)).T
     values = data[mask_local_maxima]

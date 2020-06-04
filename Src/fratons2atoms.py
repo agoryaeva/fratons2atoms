@@ -21,108 +21,172 @@ from sklearn.neighbors import KDTree
 from scipy.ndimage import gaussian_filter
 from lib_fr import *
 from numba import jit
+from datetime import datetime
 
 usage="""
      USAGE:
      -------------------------------------------------
-       python3 fratons2atoms.py  directory_name/
+       python3 fratons2atoms.py  --dir=directory_name/ --a0=X.XX
 
-       where directory_name/ is the path to *.h5 files to convert to xyz
+       where:
+             directory_name/ is the path to *.h5 files to convert to xyz
+             a0 is a unit cell parameter in fraton units 
+                in case of 2 phases, the minimum a0 should be provided:
+                e.g., for a0_bcc=6.5 and a0_fcc=8 -> a0=6.5 should be provided
+                
+       example:
+                python3 fratons2atoms.py  --dir=my_calculation/ --a0=6.5
+                  
 
 """
 
-if (len(sys.argv)-1 != 1):
-    print("\n\tERROR: Wrong number of arguments !!! ")
-    print(usage)
-    exit(0)
 
-""""
+
 #if one day the input change using parsers ....
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Fratons2atoms')
-    parser.add_argument('--dir', nargs='+', help="where directory_name/ is to path to *.h5 files to convert to xyz", required=True)
-    parser.add_argument('--sigma_gaussian', type=float,  help="First Gausian filter. The variance", default=1.1)
-    parser.add_argument('--size_window', type=int,  help="The size of the window in best_guess function", default=2)
-    parser.add_argument('--mult', type=float,  help="The power for averaging fratons coordinates into atoms", default=2.0)
-    parser.add_argument('--m_grid', nargs='+', help="The size of grid around central fraton to smooth", default=2)
+    parser.add_argument('--dir', type=str, help="the path to *.h5 files to convert to xyz", required=True)
+    parser.add_argument('--a0', type=float, help="cell parameter of the system",required=True)
+    
+    # The following options can be used to set custom input parameters, different from default values
+    parser.add_argument('--sigma', type=float,  help="The variance sigma of the Gaussian filter")
+    parser.add_argument('--mask',  type=str,  help="Kernel mask: none, 333 or 555", choices=['none', '333', '555'])
+    parser.add_argument('--size_window', type=int,  help="The size of the window in best_guess function. Good choises: 1 for low resolution calculations; 2 for higher resolution")
+    parser.add_argument('--mu', type=float,  help="The power for averaging fratons coordinates into atoms. Good choise: 2.0") # if int(parser.parse_args().a0) < 6 else 2.0)
+    parser.add_argument('--nu', type=float,  help="The power for averaging fratons coordinates into atoms. Good choise: 1.0")
+    parser.add_argument('--m_grid', help="The size of grid around central fraton to smooth. Good choises: 2 for low resolution calculations; 3 for higher resolution")
+
     args = parser.parse_args()
 
 
     in_dir=args.dir
-    sigma_gaussian=args.sigma_gaussian
-    size_window=args.size_window
-    mult=args.mult
-    m_grid_size=args.m_grid_size
-"""
+    a0=args.a0
+
+
 
 #--------------Inputs-----------------
 
-# Directory with *.h5 files to analyse
-in_dir = sys.argv[1]
+write_fratoms=False    # set True if writing of row atomic densities in xyz format desired. Warning: files will be heavy
 
-#First Gaussian filter: the standard value:
-sigma_gaussian=0.5
+# OPTIONS FOR a0_bcc=6.5 and a0_fcc=8.0
+if a0<10:
+    # F1: Gaussian
+    sigma_gaussian=0.5 if args.sigma==None  else args.sigma         # Standard deviation of the Gaussian. For low resolution recommended values sigma <=1
+    mask='none' if args.mask==None  else args.mask                  # 'none', '333' or '555' -> The effect of mask is not well tested
+    # F2: Choose best candidates for atoms
+    size_window=1 if args.size_window==None  else args.size_window  # 1 or 2, not 3!!
+    # F3: Smooth coordinates
+    mult=2.0 if args.mu==None  else args.mu                         # 0.0 -> no smoothing; 1.0-> very light 2.0 -> recommended value 3.O -> a lot of smoothing
+    nult=1.0 if args.nu==None  else args.nu                         # 0.0 -> no second term in smoothong ; 1.0 -> moderate effect; 2.0 -> stronger effect
+    m_grid_size=2 if args.m_grid==None  else args.m_grid            # 2 is a good choise for low resolution
 
-#the size of the window in best_guess function:
-size_window=1 # 3
+       
 
-#skewnes of the filter ... typical values 1, 2, 3 ... now 2.
-mult=2.0
-nult=1.0
-# the size of grid around central fraton to smooth: 2 is nice: 0 - no filter, 1 - why not ; 2 or 3 nice choices.
-m_grid_size = 2  #3
-
-#r_cut in order to patch for PBC. r_cut>=max(a0_FCC, a0_bcc). E.g. in this case 8 is OK.
-r_cut=16 # 16
-#all the dimer of atoms at distances smaller that this distance will be replaced by only one atom in the middle of  the dimer:
-dist_to_remove=3.8 #7.5
-
-write_fratoms=False
-#--------------------------------------------
+# OPTIONS FOR a0_bcc=13 and a0_fcc=16.0
+if 10<= a0 <17 :
+    # F1: Gaussian
+    sigma_gaussian=1.1 if args.sigma==None  else args.sigma        # Standard deviation of the Gaussian. 
+    mask='none' if args.mask==None  else args.mask                 # 'none', '333' or '555' -> The effect of mask is not well tested
+    # F2: Choose best candidates for atoms
+    size_window=3 if args.size_window==None else args.size_window  # 2, 3 or 4!!
+    # F3: Smooth coordinates
+    mult=2.0 if args.mu==None  else args.mu                        # 0.0 -> no smoothing; 1.0-> very light 2.0 -> recommended value 3.O -> a lot of smoothing
+    nult=1.0 if args.nu==None  else args.nu                        # 0.0 -> no second term in smoothong ; 1.0 -> moderate effect; 2.0 -> stronger effect
+    m_grid_size=3 if args.m_grid==None  else args.m_grid           # 2 or 3 is a good choise
+ 
 
 
-out_dir_at='%s/xyz_at/' %(in_dir)
-out_dir_at_smooth='%s/xyz_at_smooth/' %(in_dir)
+# OPTIONS FOR HIGHER RESOLUTION CALCULATIONS, i.e. a0 > 16
+if a0 >= 17:
+    print (' ------------------- !!!! WARNING !!!! ---------------------------')
+    print ('                This value of a0 was not tested !                ' )
+    print ('    The default parameters for conversion are likely not optimal ' )
+    print ('  It is recommended to make tests to find appropriate parameters ' )
+    print (' -----------------------------------------------------------------')
+    # F1: Gaussian
+    sigma_gaussian=1.1 if args.sigma==None  else args.sigma
+    mask='none' if args.mask==None  else args.mask  # 'none', '333' or '555'
+    # F2: Choose best candidates for atoms
+    size_window=3 if args.size_window==None  else args.size_window
+    # F3: Smooth coordinates
+    mult=2.0 if args.mu==None  else args.mu
+    nult=1.0 if args.nu==None  else args.nu
+    m_grid_size=3 if args.m_grid==None  else args.m_grid
+    
 
-if write_fratoms==True:
-    out_dir_fr='%s/xyz_fr/' %(in_dir)
-    os.system('rm -rf %s' % out_dir_fr)
-    os.system('mkdir -p %s' % out_dir_fr)
+# CORRECTION OF SMALL DISTANCES
+dist_to_remove=0.6*a0       # 2 atoms that are distant by less than than dist_to_remove will be identified as 1 atom in the middle of these fake atoms
 
+# SOME TECHNICAL INPUTS -> NO CHANGE HERE
+r_cut=a0*1.24               # The thinkness of layer to add at periodic boundary conditions in order to estimate close neighbours at the borders of the box
+
+# FILES TO READ:
 ftype='.h5'    # type of files to read
 fkey='drp__'   # prefix of files to read
-key = 'drp'
 
 
+# WRITE OUTPUTS TO
+out_dir_at='%sxyz_at/' %(in_dir)
+out_dir_at_smooth='%sxyz_at_smooth/' %(in_dir)
 os.system('rm -rf %s' % out_dir_at)
 os.system('rm -rf %s' % out_dir_at_smooth)
 os.system('mkdir -p %s' % out_dir_at)
 os.system('mkdir -p %s' % out_dir_at_smooth)
 
+if write_fratoms==True:
+    out_dir_fr='%sxyz_fr/' %(in_dir)
+    os.system('rm -rf %s' % out_dir_fr)
+    os.system('mkdir -p %s' % out_dir_fr)
+
+
+
+start=datetime.now()
+#--------------------------------------------
+
+
+print (' #####################################################################')
+print (' #                                                                   #')
+print (' #                           Ftatons2atoms                           #')
+print (' #                                                                   #')
+print (' #####################################################################')
+print ('')
+print ('                   Conversion for min a0=%.3f' %a0 )
+print ('')
+print ('       - Filter 1:      standard deviation = %.2f' %sigma_gaussian )
+print ('                        mask = %s' %mask )
+print ('       - Filter 2:      size window  = %d' %size_window)
+print ('       - Filter 3:      power mu  = %.2f' %mult)
+print ('                        power nu  = %.2f' %nult)
+print ('                        grid  m   = %d' %m_grid_size)
+print ('       - Correction:    critical distance  = %.3f' %dist_to_remove)
+
+
+
 files2read = select_type_files(in_dir, ftype, fkey)
 print ('     ')
-print (' ----------------------- DIRECTORY: %s ------------------------' %in_dir)
-print ('  >>  Number of files to read: ............................... ', len(files2read))
-print ('  >>  No   name file         at1    at1_clean   err_at1 err_end at2_clean   at2   err_end')
-
+print (' --------------------------------------------------------------')
+print ('                        DIRECTORY: %s ' %in_dir)
+print ('                     Number of files to read: %d ' %len(files2read))
+print (' --------------------------------------------------------------')
+print ('     ')
+print ('     No    File             N at1    N at2   N close      err   N at3    N close     err')
 
 density=[]
 o2=[]
 coor = []
 coor2 = []
 for i in range(int(len(files2read))):
-#for i in range(1):
     f = files2read[i]
 
     file_h5 = in_dir + f
     np_dset = read_hdf5(file_h5)
-    #print(np_dset.shape)
-
+    
     # first filter ....: define sigma : but probably should be desactivated. O(N_fratons) operation
     np_dset_gaussian = gaussian_filter(np_dset, sigma=sigma_gaussian, order=0, mode='wrap')
 
-    # convolution home-made filter. O(N_fratons) operation
-    np_dset_gaussian = convolution_sharpen(np_dset_gaussian)
+    # convolution home-made filter with masks. O(N_fratons) operation
+    if mask !='none':
+        np_dset_gaussian = convolution_sharpen(np_dset_gaussian, mask)
 
     """
     #multiple shaprpen not tested version ... but priobably work if only shifted ...
@@ -134,7 +198,7 @@ for i in range(int(len(files2read))):
 
 
 
-    #second filter: define d_grid ; O(N_fratons) operation
+    #second filter: define d_grid -> O(N_fratons) operation
     coords, sel_values = get_best_guess(np_dset_gaussian, d_grid=size_window)
     #coords, sel_values = get_best_guess_new(np_dset_gaussian, d_grid=size_window)
     #print("new", coords.shape)
@@ -152,7 +216,7 @@ for i in range(int(len(files2read))):
     coords_unperturbed_ini=coords
     """
 
-    #test if are some remaining small distances ... ; O(N_atoms * ln(N_atoms)*(k-1)) operation
+    #test if there are some remaining small distances -> O(N_atoms * ln(N_atoms)*(k-1)) operation
     tree = KDTree(coords_ini, leaf_size=10)
     dist, ind = tree.query(coords_ini, k=2)
     toot = dist[(0 < dist) & (dist < dist_to_remove)]
@@ -165,7 +229,7 @@ for i in range(int(len(files2read))):
     """
     name=f.split('.')[0]
 
-    #third ... filter: define mult & nult, O(4*N_atoms*mult**3) operation
+    #third filter: define mult & nult -> O(4*N_atoms*mult**3) operation
     coords_weighted = np.array(coords, dtype=float)
     coords_weighted=get_weigthed_average(coords, coords_weighted, np_dset, np_dset_gaussian, mult, nult, m_grid_size)
 
@@ -177,13 +241,14 @@ for i in range(int(len(files2read))):
     coords_end = coords_weighted
     coords_unperturbed_end=coords
     """
-    #test if are some remaining small distances ...O(N_atoms * ln(N_atoms*(k-1)) operation
+    #test if there are some remaining small distances -> O(N_atoms * ln(N_atoms*(k-1)) operation
     tree2= KDTree(coords_end, leaf_size=10)
     dist, ind = tree2.query(coords_end, k=2)
     toot2 = dist[(0 < dist) & (dist < dist_to_remove)]
     coor2.append(int(len(toot2)))
 
     print("%7d %s %8d %8d %8d %8d %8d %8d %8d" % (i+1, f, len(coords), len(coords_ini), removed_ini, len(toot), len(coords_end), removed_end, len(toot2)))
+    #print("%7d %s %8d %8d %8d %8d %8d " % (i+1, f, len(coords), len(coords_ini), removed_ini, len(coords_end), removed_end))
 
 
     #writing brute coordinates after 2 filters
@@ -203,3 +268,4 @@ print ('  >>  Smooth coordinates are written to: ..................... ', out_di
 print ('     ')
 print ('----------------------- ENJOY!!! ------------------------')
 print ('     ')
+print (datetime.now()-start)
