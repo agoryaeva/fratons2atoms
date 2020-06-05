@@ -8,10 +8,7 @@ import sys
 import shutil
 import numpy as np
 import h5py
-from matplotlib import pyplot as plt
 import natsort
-from ase import atoms
-from ase.io import read, iread, write
 from scipy import ndimage as ndi
 from scipy.signal import argrelextrema
 from sklearn.neighbors import KDTree
