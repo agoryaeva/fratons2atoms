@@ -77,7 +77,7 @@ Usage:
   
 With this command the script `fratons2atoms.py` will read the h5 files in the `<path>` directory and set the default parameters for the convertion based on the given `<a0>` in fraton units. In case the simulation cell contains more than one phase with different `<a0>`, the smallest one should be provided. 
   
-  ##### Examaple: 
+  ##### Example: 
   
  To convert the calculations of the transition between fcc with a0=8.0 and bcc with a0=6.5 that are stored in Examples/BCC-6.5_FCC_8/ using default settings 
   
@@ -99,7 +99,7 @@ To convert the example provided above using different parameterization of filter
 
 
 
-  ##### Examaple: 
+  ##### Example: 
 ``` 
  > python3 fratons2atoms.py  --dir=Examples/BCC-6.5_FCC_8/  --a0=6.5 --mask=333 --nu=0 
  ``` 
