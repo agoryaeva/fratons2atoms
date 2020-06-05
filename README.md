@@ -4,7 +4,7 @@ python package to convert atomic densities ("fratons") from quasiparticle calcul
 
 **Authors:** A.M. Goryaeva, M.C. Marinica
 
-alexandra.goryaeva (at) univ.rouen.fr
+alexandra.goryaeva (at) univ-rouen.fr
 
 Purposes:
 -----------------
