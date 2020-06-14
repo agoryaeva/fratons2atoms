@@ -25,7 +25,7 @@ Then, in order to enhance and better localize the center of the atom, the convol
 
 <img src="Documentation/pictures/mask_333.png" width="400" >
 
-<img src="Documentation/pictures/mask_555.png" width="500" >
+<img src="Documentation/pictures/mask_555.png" width="600" >
 
 
 
